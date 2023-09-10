@@ -1,4 +1,5 @@
-use std::env;
+use std::{env, fs};
+use serde::Deserialize;
 use serde_bencode::{self, value::Value};
 
 fn decode(encoded_value: &str) -> Value {
@@ -23,6 +24,22 @@ fn format(value: &Value) -> String {
     }
 }
 
+#[derive(Debug, Deserialize)]
+struct Info {
+    #[allow(dead_code)]
+    name: String,
+    #[allow(dead_code)]
+    #[serde(rename = "piece length")]
+    piece_length: usize,
+    length: usize,
+}
+
+#[derive(Debug, Deserialize)]
+struct MetaInfo {
+    announce: String,
+    info: Info
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     let command = &args[1];
@@ -31,6 +48,11 @@ fn main() {
         let encoded_value = &args[2];
         let decoded_value = decode(encoded_value);
         println!("{}", format(&decoded_value));
+    } else if command == "info" {
+        let data = fs::read(&args[2]).unwrap();
+        let meta: MetaInfo = serde_bencode::from_bytes(&data).unwrap();
+        println!("Tracker URL: {}", meta.announce);
+        println!("Length: {}", meta.info.length);
     } else {
         println!("unknown command: {}", args[1])
     }
