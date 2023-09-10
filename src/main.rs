@@ -4,10 +4,7 @@ use serde_bencode::{self, value::Value};
 
 fn format(value: &Value) -> String {
     return match value {
-        Value::Bytes(bytes) => match String::from_utf8(bytes.to_vec()) {
-            Ok(string) => string,
-            Err(_) => panic!("invalid UTF-8"),
-        },
+        Value::Bytes(bytes) => format!("{:?}", std::str::from_utf8(bytes).unwrap()),
         Value::Int(i) => i.to_string(),
         Value::List(list) => list.iter().map(format).collect::<Vec<String>>().join(","),
         _ => panic!("invalid type"),
