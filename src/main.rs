@@ -6,15 +6,25 @@ use std::env;
 
 #[allow(dead_code)]
 fn decode_bencoded_value(encoded_value: &str) -> serde_json::Value {
-    if encoded_value.chars().next().unwrap().is_digit(10) {
+    let first_char = encoded_value.chars().next().unwrap();
+
+    let rv: serde_json::Value;
+
+    if first_char.is_digit(10) {
         let colon_index = encoded_value.find(':').unwrap();
         let number_string = &encoded_value[..colon_index];
         let number = number_string.parse::<usize>().unwrap();
         let string = &encoded_value[colon_index + 1..colon_index + 1 + number];
-        return serde_json::Value::String(string.to_string());
+        rv = serde_json::Value::String(string.to_string());
+    } else if first_char == 'i' && encoded_value.ends_with('e') {
+        let number_string = &encoded_value[1..encoded_value.len() - 1];
+        let number = number_string.parse::<isize>().unwrap();
+        rv = serde_json::Value::Number(number.into());
     } else {
         panic!("Unhandled encoded value: {}", encoded_value)
     }
+
+    return rv;
 }
 
 // Usage: your_bittorrent.sh decode "<encoded_value>"
