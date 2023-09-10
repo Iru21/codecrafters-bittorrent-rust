@@ -15,7 +15,7 @@ fn format(value: &Value) -> String {
             for (key, value) in dict {
                 let key_str = String::from_utf8_lossy(key).to_string();
 
-                result.push(format!("{}: {}", key_str, format(value)));
+                result.push(format!("\"{}\": {}", key_str, format(value)));
             }
             result.sort();
             format!("{{{}}}", result.join(", "))
