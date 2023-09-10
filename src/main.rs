@@ -1,30 +1,37 @@
 use std::{env, fs};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_bencode::{self, value::Value};
+use sha1::{Digest, Sha1};
 
 fn decode(encoded_value: &str) -> Value {
     return serde_bencode::from_str::<Value>(encoded_value).unwrap();
 }
 
-fn format(value: &Value) -> String {
-    return match value {
-        Value::Bytes(bytes) => format!("{:?}", std::str::from_utf8(bytes).unwrap()),
-        Value::Int(i) => i.to_string(),
-        Value::List(list) => format!("[{}]", list.iter().map(format).collect::<Vec<String>>().join(",")),
-        Value::Dict(dict) => {
-            let mut result = Vec::<String>::new();
-            for (key, value) in dict {
-                let key_str = String::from_utf8_lossy(key).to_string();
+trait ValueToString {
+    fn to_string(&self) -> String;
+}
 
-                result.push(format!("\"{}\":{}", key_str, format(value)));
+impl ValueToString for Value {
+    fn to_string(&self) -> String {
+        return match self {
+            Value::Bytes(bytes) => format!("{:?}", std::str::from_utf8(bytes).unwrap()),
+            Value::Int(i) => i.to_string(),
+            Value::List(list) => format!("[{}]", list.iter().map(|v| { v.to_string() }).collect::<Vec<String>>().join(",")),
+            Value::Dict(dict) => {
+                let mut result = Vec::<String>::new();
+                for (key, value) in dict {
+                    let key_str = String::from_utf8_lossy(key).to_string();
+
+                    result.push(format!("\"{}\":{}", key_str, value.to_string()));
+                }
+                result.sort();
+                format!("{{{}}}", result.join(","))
             }
-            result.sort();
-            format!("{{{}}}", result.join(","))
         }
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct Info {
     #[allow(dead_code)]
     name: String,
@@ -47,12 +54,17 @@ fn main() {
     if command == "decode" {
         let encoded_value = &args[2];
         let decoded_value = decode(encoded_value);
-        println!("{}", format(&decoded_value));
+        println!("{}", decoded_value.to_string());
     } else if command == "info" {
         let data = fs::read(&args[2]).unwrap();
         let meta: MetaInfo = serde_bencode::from_bytes(&data).unwrap();
+
+        let bencoded_info = serde_bencode::to_bytes(&meta.info).unwrap();
+        let info_hash = format!("{:x}", Sha1::digest(&bencoded_info));
+
         println!("Tracker URL: {}", meta.announce);
         println!("Length: {}", meta.info.length);
+        println!("Info Hash: {}", info_hash);
     } else {
         println!("unknown command: {}", args[1])
     }
