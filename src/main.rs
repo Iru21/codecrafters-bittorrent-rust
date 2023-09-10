@@ -214,9 +214,6 @@ fn main() {
         let mut handshake_response = [0; 68];
         stream.read_exact(&mut handshake_response).unwrap();
 
-        println!("Handshake response: {:?}", handshake_response);
-        println!("Handshake length: {}", handshake_response.len());
-
         let peer_id = handshake_response[48..68].iter().map(|b| {
             format!("{:x}", b)
         }).collect::<Vec<String>>().join("");
