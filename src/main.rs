@@ -18,7 +18,7 @@ fn format(value: &Value) -> String {
                 result.push(format!("\"{}\":{}", key_str, format(value)));
             }
             result.sort();
-            format!("{{{}}}", result.join(", "))
+            format!("{{{}}}", result.join(","))
         }
     }
 }
