@@ -6,7 +6,7 @@ fn format(value: &Value) -> String {
     return match value {
         Value::Bytes(bytes) => format!("{:?}", std::str::from_utf8(bytes).unwrap()),
         Value::Int(i) => i.to_string(),
-        Value::List(list) => list.iter().map(format).collect::<Vec<String>>().join(","),
+        Value::List(list) => format!("[{}]", list.iter().map(format).collect::<Vec<String>>().join(",")),
         _ => panic!("invalid type"),
     }
 }
