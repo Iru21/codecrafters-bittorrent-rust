@@ -1,7 +1,12 @@
 use std::{env, fs};
+use std::io::{Read, Write};
+use std::net::TcpStream;
 use serde::{Deserialize, Serialize};
 use serde_bencode::{self, value::Value};
 use sha1::{Digest, Sha1};
+use sha1::digest::Output;
+
+const PEER_ID: &str = "00112233445566778899";
 
 fn decode(encoded_value: &str) -> Value {
     return serde_bencode::from_str::<Value>(encoded_value).unwrap();
@@ -44,11 +49,24 @@ struct TorrentInfo {
 }
 
 impl TorrentInfo {
-    fn hash(&self) -> String {
-        let bencoded_info = serde_bencode::to_bytes(self).unwrap();
+    fn bytes(&self) -> Vec<u8> {
+        return serde_bencode::to_bytes(&self).unwrap();
+    }
+
+    fn hash(&self) -> Output<Sha1> {
         let mut hasher = Sha1::new();
-        hasher.update(bencoded_info);
-        return format!("{:x}", hasher.finalize());
+        hasher.update(self.bytes());
+        return hasher.finalize();
+    }
+
+    fn hex_hash(&self) -> String {
+        return format!("{:x}", self.hash());
+    }
+
+    fn url_encoded_hash(&self) -> String {
+        self.hash().iter().map(|b| {
+            format!("%{:02x}", b)
+        }).collect::<Vec<String>>().join("")
     }
 
     fn pieces(&self) -> Vec<String> {
@@ -74,18 +92,6 @@ impl Torrent {
     }
 }
 
-
-fn url_encode(bytes: &[u8]) -> String {
-    let mut hasher = Sha1::new();
-    hasher.update(bytes);
-
-    let hashed = hasher.finalize().iter().map(|b| {
-        format!("%{:02x}", b)
-    }).collect::<Vec<String>>().join("");
-
-    hashed
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 struct TrackerRequest {
     info_hash: String,
@@ -98,10 +104,10 @@ struct TrackerRequest {
 }
 
 impl TrackerRequest {
-    fn new(meta: TorrentInfo) -> Self {
+    fn new(meta: &TorrentInfo) -> Self {
         TrackerRequest {
-            info_hash : url_encode(&serde_bencode::to_bytes(&meta).unwrap()),
-            peer_id: "00112233445566778899".to_string(),
+            info_hash : meta.url_encoded_hash(),
+            peer_id: PEER_ID.to_string(),
             port: 6881,
             uploaded: 0,
             downloaded: 0,
@@ -164,7 +170,7 @@ fn main() {
 
         println!("Tracker URL: {}", meta.announce);
         println!("Length: {}", meta.info.length);
-        println!("Info Hash: {}", meta.info.hash());
+        println!("Info Hash: {}", meta.info.hex_hash());
         println!("Piece Length: {}", meta.info.piece_length);
         println!("Pieces:");
 
@@ -174,7 +180,7 @@ fn main() {
     } else if command == "peers" {
         let meta = Torrent::from_file(&args[2]);
 
-        let response = TrackerRequest::new(meta.info)
+        let response = TrackerRequest::new(&meta.info)
             .fetch_peers(meta.announce);
 
         println!("Peers:");
@@ -182,6 +188,38 @@ fn main() {
         for peer in response.format_peers() {
             println!("{}", peer);
         }
+    } else if command == "handshake" {
+        let meta = Torrent::from_file(&args[2]);
+
+        let peer = if args.len() > 3 {
+            args[3].clone()
+        } else {
+            let response = TrackerRequest::new(&meta.info)
+                .fetch_peers(meta.announce);
+
+            response.format_peers()[0].clone()
+        };
+
+        let mut stream = TcpStream::connect(peer).unwrap();
+
+        let mut handshake = Vec::<u8>::new();
+        handshake.push(19);
+        handshake.append(&mut b"BitTorrent protocol".to_vec());
+        handshake.append(&mut vec![0; 8]);
+        handshake.append(&mut meta.info.hash().to_vec());
+        handshake.append(&mut PEER_ID.as_bytes().to_vec());
+
+        stream.write_all(handshake.as_slice()).unwrap();
+
+        let mut handshake_response = [0; 68];
+        stream.read_exact(&mut handshake_response).unwrap();
+
+        let peer_id = handshake_response[48..68].iter().map(|b| {
+            format!("{}", b)
+        }).collect::<Vec<String>>().join("");
+
+        println!("Peer ID: {}", peer_id);
+
     } else {
         println!("unknown command: {}", args[1])
     }
