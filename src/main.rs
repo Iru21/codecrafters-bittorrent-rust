@@ -214,7 +214,6 @@ fn main() {
         let mut handshake_response = [0; 68];
         stream.read_exact(&mut handshake_response).unwrap();
 
-        // convert bytes to hex string
         let peer_id = handshake_response[48..68].iter().map(|b| {
             format!("{:02x}", b)
         }).collect::<Vec<String>>().join("");
