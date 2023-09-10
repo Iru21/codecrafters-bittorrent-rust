@@ -32,19 +32,30 @@ impl ValueToString for Value {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Info {
+struct TorrentInfo {
     #[allow(dead_code)]
     name: String,
     #[allow(dead_code)]
     #[serde(rename = "piece length")]
     piece_length: usize,
     length: usize,
+    #[serde(with = "serde_bytes")]
+    pieces: Vec<u8>,
+}
+
+impl TorrentInfo {
+    fn hash(&self) -> String {
+        let bencoded_info = serde_bencode::to_bytes(self).unwrap();
+        let mut hasher = Sha1::new();
+        hasher.update(bencoded_info);
+        return format!("{:x}", hasher.finalize());
+    }
 }
 
 #[derive(Debug, Deserialize)]
-struct MetaInfo {
+struct Torrent {
     announce: String,
-    info: Info
+    info: TorrentInfo
 }
 
 fn main() {
@@ -57,16 +68,11 @@ fn main() {
         println!("{}", decoded_value.to_string());
     } else if command == "info" {
         let data = fs::read(&args[2]).unwrap();
-        let meta: MetaInfo = serde_bencode::from_bytes(&data).unwrap();
-
-        let bencoded_info = serde_bencode::to_bytes(&meta.info).unwrap();
-        let mut hasher = Sha1::new();
-        hasher.update(bencoded_info);
-        let info_hash = format!("{:x}", hasher.finalize());
+        let meta: Torrent = serde_bencode::from_bytes(&data).unwrap();
 
         println!("Tracker URL: {}", meta.announce);
         println!("Length: {}", meta.info.length);
-        println!("Info Hash: {}", info_hash);
+        println!("Info Hash: {}", meta.info.hash());
     } else {
         println!("unknown command: {}", args[1])
     }
