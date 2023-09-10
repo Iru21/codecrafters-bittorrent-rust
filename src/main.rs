@@ -50,6 +50,15 @@ impl TorrentInfo {
         hasher.update(bencoded_info);
         return format!("{:x}", hasher.finalize());
     }
+
+    fn pieces(&self) -> Vec<String> {
+        return self.pieces.chunks(20).map(|chunk| {
+            format!("{}", chunk.iter().map(|b| {
+                    format!("{:02x}", b)
+                }).collect::<Vec<String>>().join("")
+            )
+        }).collect();
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -73,6 +82,12 @@ fn main() {
         println!("Tracker URL: {}", meta.announce);
         println!("Length: {}", meta.info.length);
         println!("Info Hash: {}", meta.info.hash());
+        println!("Piece Length: {}", meta.info.piece_length);
+        println!("Pieces:");
+
+        for piece in meta.info.pieces() {
+            println!("{}", piece);
+        }
     } else {
         println!("unknown command: {}", args[1])
     }
