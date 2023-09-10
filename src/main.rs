@@ -60,7 +60,9 @@ fn main() {
         let meta: MetaInfo = serde_bencode::from_bytes(&data).unwrap();
 
         let bencoded_info = serde_bencode::to_bytes(&meta.info).unwrap();
-        let info_hash = format!("{:x}", Sha1::digest(&bencoded_info));
+        let mut hasher = Sha1::new();
+        hasher.update(bencoded_info);
+        let info_hash = format!("{:x}", hasher.finalize());
 
         println!("Tracker URL: {}", meta.announce);
         println!("Length: {}", meta.info.length);
