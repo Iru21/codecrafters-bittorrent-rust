@@ -11,16 +11,14 @@ fn format(value: &Value) -> String {
         Value::Int(i) => i.to_string(),
         Value::List(list) => format!("[{}]", list.iter().map(format).collect::<Vec<String>>().join(",")),
         Value::Dict(dict) => {
-            let mut result = String::from("{");
+            let mut result = Vec::<String>::new();
             for (key, value) in dict {
-                result.push_str(&format!("\"{}\": {}", std::str::from_utf8(key).unwrap(), format(value)));
+                let key_str = String::from_utf8_lossy(key).to_string();
 
-                if key != dict.keys().last().unwrap() {
-                    result.push_str(", ");
-                }
+                result.push(format!("{}: {}", key_str, format(value)));
             }
-            result.push_str("}");
-            result
+            result.sort();
+            format!("{{{}}}", result.join(", "))
         }
     }
 }
