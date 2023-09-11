@@ -28,6 +28,52 @@ impl Connection {
         }
     }
 
+    pub fn handshake(&mut self, info_hash: Vec<u8>, peer_id: &str) -> HandshakeResponse {
+        let mut handshake = Vec::<u8>::new();
+
+        handshake.push(19);
+        handshake.extend(b"BitTorrent protocol");
+        handshake.extend(vec![0; 8]);
+        handshake.extend(info_hash);
+        handshake.extend(peer_id.as_bytes().to_vec());
+
+        self.stream.write_all(&handshake).unwrap();
+
+        let mut handshake_response = [0; 68];
+        self.stream.read_exact(&mut handshake_response).unwrap();
+
+        HandshakeResponse {
+            info_hash: handshake_response[28..48].to_vec(),
+            peer_id: handshake_response[48..68].to_vec(),
+        }
+    }
+
+    pub fn send_request(&mut self, index: u32, begin: u32, length: u32) {
+        let mut payload = vec![0; 12];
+        payload[0..4].copy_from_slice(&index.to_be_bytes());
+        payload[4..8].copy_from_slice(&begin.to_be_bytes());
+        payload[8..12].copy_from_slice(&length.to_be_bytes());
+
+        self.send_message(Connection::REQUEST, payload);
+    }
+
+    pub fn send_interested(&mut self) {
+        self.send_message(Connection::INTERESTED, vec![]);
+    }
+
+    pub fn send_message(&mut self, id: u8, payload: Vec<u8>) {
+        let mut message = vec![0; 5 + payload.len()];
+        let mut length = payload.len() as u32;
+        if length == 0 {
+            length = 1;
+        }
+        message[0..4].copy_from_slice(&(length).to_be_bytes());
+        message[4] = id;
+        message[5..].copy_from_slice(&payload);
+
+        self.stream.write_all(&message).unwrap();
+    }
+
     pub fn download_piece(&mut self, meta: Torrent, piece_index: u32, path: String) {
         const CHUNK_SIZE: usize = 16 * 1024;
         let block_count = meta.info.piece_length / CHUNK_SIZE;
@@ -75,51 +121,6 @@ impl Connection {
         } else {
             println!("% piece hash mismatch, expected {}({}), got {}({})", piece_hash, piece_hash.len(), fetched_piece_hash, fetched_piece_hash.len());
         }
-    }
-    pub fn handshake(&mut self, info_hash: Vec<u8>, peer_id: &str) -> HandshakeResponse {
-        let mut handshake = Vec::<u8>::new();
-
-        handshake.push(19);
-        handshake.extend(b"BitTorrent protocol");
-        handshake.extend(vec![0; 8]);
-        handshake.extend(info_hash);
-        handshake.extend(peer_id.as_bytes().to_vec());
-
-        self.stream.write_all(&handshake).unwrap();
-
-        let mut handshake_response = [0; 68];
-        self.stream.read_exact(&mut handshake_response).unwrap();
-
-        HandshakeResponse {
-            info_hash: handshake_response[28..48].to_vec(),
-            peer_id: handshake_response[48..68].to_vec(),
-        }
-    }
-
-    pub fn send_request(&mut self, index: u32, begin: u32, length: u32) {
-        let mut payload = vec![0; 12];
-        payload[0..4].copy_from_slice(&index.to_be_bytes());
-        payload[4..8].copy_from_slice(&begin.to_be_bytes());
-        payload[8..12].copy_from_slice(&length.to_be_bytes());
-
-        self.send_message(Connection::REQUEST, payload);
-    }
-
-    pub fn send_interested(&mut self) {
-        self.send_message(Connection::INTERESTED, vec![]);
-    }
-
-    pub fn send_message(&mut self, id: u8, payload: Vec<u8>) {
-        let mut message = vec![0; 5 + payload.len()];
-        let mut length = payload.len() as u32;
-        if length == 0 {
-            length = 1;
-        }
-        message[0..4].copy_from_slice(&(length).to_be_bytes());
-        message[4] = id;
-        message[5..].copy_from_slice(&payload);
-
-        self.stream.write_all(&message).unwrap();
     }
 
     pub fn wait(&mut self, id: u8) -> Vec<u8> {
