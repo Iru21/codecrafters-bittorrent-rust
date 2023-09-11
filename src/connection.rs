@@ -80,7 +80,7 @@ impl Connection {
         const CHUNK_SIZE: usize = 16 * 1024;
         let mut block_count = 0;
         for byte_offset in (0..meta.info.piece_length).step_by(CHUNK_SIZE) {
-            println!("++ Requesting block {}", byte_offset);
+            println!("++ Requesting block {}", byte_offset / CHUNK_SIZE);
             self.send_request(piece_index, byte_offset as u32, CHUNK_SIZE as u32);
             block_count += 1;
         }
