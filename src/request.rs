@@ -26,7 +26,7 @@ impl TrackerRequest {
         }
     }
 
-    pub fn fetch_peers(&self, tracker_url: String) -> TrackerResponse {
+    pub fn fetch_peers(&self, tracker_url: &String) -> TrackerResponse {
         let client = reqwest::blocking::Client::new();
 
         let url = format!("{}?info_hash={}", tracker_url, &self.info_hash);
