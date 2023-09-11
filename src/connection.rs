@@ -78,7 +78,8 @@ impl Connection {
             let mut length_prefix = [0; 4];
             match self.stream.read_exact(&mut length_prefix) {
                 Ok(_) => {},
-                Err(_) => {
+                Err(err) => {
+                    println!("* Error reading length prefix: {}", err);
                     continue;
                 }
             }
@@ -86,7 +87,8 @@ impl Connection {
             let mut message_id = [0; 1];
             match self.stream.read_exact(&mut message_id)  {
                 Ok(_) => {},
-                Err(_) => {
+                Err(err) => {
+                    println!("* Error reading message id: {}", err);
                     continue;
                 }
             }
@@ -103,7 +105,8 @@ impl Connection {
             let mut payload = vec![0; resp_size as usize];
             match self.stream.read_exact(&mut payload) {
                 Ok(_) => {},
-                Err(_) => {
+                Err(err) => {
+                    println!("* Error reading payload: {}", err);
                     continue;
                 }
             }
