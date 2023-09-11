@@ -113,7 +113,6 @@ fn main() {
 
             println!("Received block {} of length {}", begin / CHUNK_SIZE, resp.len() - 8);
             piece_data.splice(begin..begin + CHUNK_SIZE, resp[8..].iter().cloned());
-            println!("Spliced block {} into piece data", begin / CHUNK_SIZE)
         }
 
         println!("All pieces received, verifying hash");
