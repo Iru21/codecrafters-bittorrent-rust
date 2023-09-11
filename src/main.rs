@@ -92,14 +92,8 @@ fn main() {
 
         let block_count = meta.info.piece_length / CHUNK_SIZE;
         for i in 0..block_count {
-            let length = if i == block_count - 1 {
-                meta.info.piece_length - (i * CHUNK_SIZE)
-            } else {
-                CHUNK_SIZE
-            };
-
-            println!("++ Requesting block {} of length {}", i, length);
-            connection.send_request(piece_index as u32, (i * CHUNK_SIZE) as u32, length as u32);
+            println!("++ Requesting block {}", i);
+            connection.send_request(piece_index as u32, (i * CHUNK_SIZE) as u32, CHUNK_SIZE as u32);
         }
 
 
