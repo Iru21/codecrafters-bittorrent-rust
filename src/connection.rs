@@ -119,7 +119,7 @@ impl Connection {
 
             file.write_all(&piece_data).unwrap();
 
-            println!("Piece {} downloaded to {}", &piece_index, &path);
+            println!("Piece {} downloaded to {}.", &piece_index, &path);
         } else {
             println!("% piece hash mismatch, expected {}({}), got {}({})", piece_hash, piece_hash.len(), fetched_piece_hash, fetched_piece_hash.len());
         }
