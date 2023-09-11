@@ -11,8 +11,8 @@ pub struct TorrentInfo {
     #[serde(rename = "piece length")]
     pub piece_length: usize,
     pub length: usize,
-    #[serde(with = "serde_bytes")]
-    pub pieces: Vec<u8>,
+    #[serde(with = "serde_bytes", rename = "pieces")]
+    pub raw_pieces: Vec<u8>,
 }
 
 impl TorrentInfo {
@@ -37,7 +37,7 @@ impl TorrentInfo {
     }
 
     pub fn pieces(&self) -> Vec<String> {
-        return self.pieces.chunks(20).map(|chunk| {
+        return self.raw_pieces.chunks(20).map(|chunk| {
             format!("{}", chunk.iter().map(|b| {
                 format!("{:02x}", b)
             }).collect::<Vec<String>>().join("")
