@@ -74,24 +74,41 @@ impl Connection {
     pub fn wait(&mut self, id: u8) -> Vec<u8> {
         println!("* Waiting for message {}", id);
 
-        let mut length_prefix = [0; 4];
-        self.stream.read_exact(&mut length_prefix).expect("Failed to read length prefix");
+        loop {
+            let mut length_prefix = [0; 4];
+            match self.stream.read_exact(&mut length_prefix) {
+                Ok(_) => {},
+                Err(_) => {
+                    continue;
+                }
+            }
 
-        let mut message_id = [0; 1];
-        self.stream.read_exact(&mut message_id).expect("Failed to read message id");
+            let mut message_id = [0; 1];
+            match self.stream.read_exact(&mut message_id)  {
+                Ok(_) => {},
+                Err(_) => {
+                    continue;
+                }
+            }
 
-        if message_id[0] != id {
-            panic!("* Expected message id {}, got {}", id, message_id[0]);
+            if message_id[0] != id {
+                panic!("* Expected message id {}, got {}", id, message_id[0]);
+            }
+
+            let resp_size = u32::from_be_bytes(length_prefix) - 1;
+            println!("* Expecting {} bytes", resp_size);
+            if resp_size == 0 {
+                return vec![];
+            }
+            let mut payload = vec![0; resp_size as usize];
+            match self.stream.read_exact(&mut payload) {
+                Ok(_) => {},
+                Err(_) => {
+                    continue;
+                }
+            }
+
+            return payload;
         }
-
-        let resp_size = u32::from_be_bytes(length_prefix) - 1;
-        println!("* Expecting {} bytes", resp_size);
-        if resp_size == 0 {
-            return vec![];
-        }
-        let mut payload = vec![0; resp_size as usize];
-        self.stream.read_exact(&mut payload).expect("Failed to read payload");
-
-        payload
     }
 }
