@@ -68,7 +68,9 @@ impl Connection {
 
     pub fn wait(&mut self, id: u8) -> Vec<u8> {
         let mut length_prefix = [0; 4];
-        self.stream.read_exact(&mut length_prefix).expect("Failed to read length prefix");
+        self.stream.read_exact(&mut length_prefix).unwrap_or_else(|_| {
+            length_prefix[3] = 1;
+        });
 
         let mut message_id = [0; 1];
         self.stream.read_exact(&mut message_id).expect("Failed to read message id");
