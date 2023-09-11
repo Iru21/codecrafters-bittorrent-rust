@@ -83,15 +83,9 @@ impl Connection {
         }
 
         let resp_size = u32::from_be_bytes(length_prefix) - 1;
-        return if resp_size > 0 {
-            let mut payload = vec![0; resp_size as usize];
-            self.stream.read_exact(&mut payload).expect("Failed to read payload");
+        let mut payload = vec![0; resp_size as usize];
+        self.stream.read_exact(&mut payload).expect("Failed to read payload");
 
-            payload
-        } else {
-            vec![]
-        }
-
-
+        payload
     }
 }
