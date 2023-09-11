@@ -81,6 +81,8 @@ fn main() {
         let mut connection = Connection::new(peer);
         connection.handshake(meta.info.hash().to_vec(), PEER_ID);
 
+        println!("Handshake complete, requesting piece {}", &piece_index);
+
         connection.send_interested();
         connection.wait(1);
 
@@ -91,8 +93,11 @@ fn main() {
             } else {
                 CHUNK_SIZE
             };
+
+            println!("Requesting block {} of length {}", i, length);
             connection.send_request(piece_index as u32, (i * CHUNK_SIZE) as u32, length as u32);
         }
+
 
         let mut piece_data = vec![0; meta.info.piece_length];
         for _ in 0..block_count {
@@ -105,9 +110,11 @@ fn main() {
 
             let begin = u32::from_be_bytes([resp[4], resp[5], resp[6], resp[7]]) as usize;
 
+            println!("Received block {} of length {}", begin, resp.len() - 8);
             piece_data.splice(begin..begin + CHUNK_SIZE, resp[8..].iter().cloned());
         }
 
+        println!("All pieces received, verifying hash");
         let mut hasher = Sha1::new();
         hasher.update(&piece_data.as_slice());
         let fetched_piece_hash = hasher.finalize().iter().map(|b| {
