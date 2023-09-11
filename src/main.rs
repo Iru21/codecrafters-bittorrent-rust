@@ -81,10 +81,15 @@ fn main() {
         let mut connection = Connection::new(peer);
         connection.handshake(meta.info.hash().to_vec(), PEER_ID);
 
-        println!("Handshake complete, requesting piece {}", &piece_index);
+        println!("Handshake complete, waiting for bitfield, begining exchange");
+
+        connection.wait(Connection::BITFIELD);
+
 
         connection.send_interested();
         connection.wait(Connection::UNCHOKE);
+
+        println!("Unchoked, requesting piece {}", piece_index);
 
         let block_count = meta.info.piece_length / CHUNK_SIZE;
         for i in 0..block_count {

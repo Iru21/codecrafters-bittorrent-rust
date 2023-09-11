@@ -39,8 +39,6 @@ impl Connection {
         let mut handshake_response = [0; 68];
         self.stream.read_exact(&mut handshake_response).unwrap();
 
-        // self.wait(Connection::BITFIELD);
-
         HandshakeResponse {
             info_hash: handshake_response[28..48].to_vec(),
             peer_id: handshake_response[48..68].to_vec(),
