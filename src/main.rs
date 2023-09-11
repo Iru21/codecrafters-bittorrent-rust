@@ -81,14 +81,14 @@ fn main() {
         let mut connection = Connection::new(peer);
         connection.handshake(meta.info.hash().to_vec(), PEER_ID);
 
-        println!("Handshake complete, waiting for bitfield, begining exchange");
+        println!("* Handshake complete, waiting for bitfield, begining exchange");
 
         connection.wait(Connection::BITFIELD);
 
         connection.send_interested();
         connection.wait(Connection::UNCHOKE);
 
-        println!("Unchoked, requesting piece {}", piece_index);
+        println!("* Unchoked, requesting piece {}", piece_index);
 
         let block_count = meta.info.piece_length / CHUNK_SIZE;
         for i in 0..block_count {
@@ -98,7 +98,7 @@ fn main() {
                 CHUNK_SIZE
             };
 
-            println!("Requesting block {} of length {}", i, length);
+            println!("++ Requesting block {} of length {}", i, length);
             connection.send_request(piece_index as u32, (i * CHUNK_SIZE) as u32, length as u32);
         }
 
@@ -106,7 +106,7 @@ fn main() {
         let mut piece_data = vec![0; meta.info.piece_length];
         for _ in 0..block_count {
             let resp = connection.wait(Connection::PIECE);
-            println!("Received response of length {}", resp.len());
+            println!("* Received response of length {}", resp.len());
             let index = u32::from_be_bytes([resp[0], resp[1], resp[2], resp[3]]);
             if index != piece_index as u32 {
                 println!("index mismatch, expected {}, got {}", &piece_index, index);
@@ -115,10 +115,10 @@ fn main() {
 
             let begin = u32::from_be_bytes([resp[4], resp[5], resp[6], resp[7]]) as usize;
             piece_data.splice(begin..begin + CHUNK_SIZE, resp[8..].iter().cloned());
-            println!("Received block {} of length {}", begin / CHUNK_SIZE, resp.len() - 8);
+            println!("-- Received block {} of length {}", begin / CHUNK_SIZE, resp.len() - 8);
         }
 
-        println!("All pieces received, verifying hash");
+        println!("% All pieces received, verifying hash");
         let mut hasher = Sha1::new();
         hasher.update(&piece_data.as_slice());
         let fetched_piece_hash = hasher.finalize().iter().map(|b| {
@@ -137,7 +137,7 @@ fn main() {
 
             println!("Piece {} downloaded to {}", &piece_index, &path);
         } else {
-            println!("piece hash mismatch, expected {}({}), got {}({})", piece_hash, piece_hash.len(), fetched_piece_hash, fetched_piece_hash.len());
+            println!("% piece hash mismatch, expected {}({}), got {}({})", piece_hash, piece_hash.len(), fetched_piece_hash, fetched_piece_hash.len());
         }
 
     } else {
