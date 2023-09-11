@@ -11,6 +11,13 @@ pub struct Connection {
 }
 
 impl Connection {
+
+    pub const UNCHOKE: u8 = 1;
+    pub const INTERESTED: u8 = 2;
+    pub const BITFIELD: u8 = 5;
+    pub const REQUEST: u8 = 6;
+    pub const PIECE: u8 = 7;
+
     pub fn new(peer: String) -> Self {
         let stream = TcpStream::connect(peer).unwrap();
 
@@ -32,7 +39,7 @@ impl Connection {
         let mut handshake_response = [0; 68];
         self.stream.read_exact(&mut handshake_response).unwrap();
 
-        self.wait(5);
+        self.wait(Connection::BITFIELD);
 
         HandshakeResponse {
             info_hash: handshake_response[28..48].to_vec(),
@@ -46,21 +53,21 @@ impl Connection {
         payload[4..8].copy_from_slice(&begin.to_be_bytes());
         payload[8..12].copy_from_slice(&length.to_be_bytes());
 
-        self.send_message(6, payload);
+        self.send_message(Connection::REQUEST, payload);
     }
 
     pub fn send_interested(&mut self) {
-        self.send_message(2, vec![]);
+        self.send_message(Connection::INTERESTED, vec![]);
     }
 
-    pub fn send_message(&mut self, id: u32, payload: Vec<u8>) {
+    pub fn send_message(&mut self, id: u8, payload: Vec<u8>) {
         let mut message = vec![0; 5 + payload.len()];
         let mut length = payload.len() as u32;
         if length == 0 {
             length = 1;
         }
         message[0..4].copy_from_slice(&(length).to_be_bytes());
-        message[4] = id as u8;
+        message[4] = id;
         message[5..].copy_from_slice(&payload);
 
         self.stream.write_all(&message).unwrap();

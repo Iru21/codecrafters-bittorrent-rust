@@ -84,7 +84,7 @@ fn main() {
         println!("Handshake complete, requesting piece {}", &piece_index);
 
         connection.send_interested();
-        connection.wait(1);
+        connection.wait(Connection::UNCHOKE);
 
         let block_count = meta.info.piece_length / CHUNK_SIZE;
         for i in 0..block_count {
@@ -101,7 +101,7 @@ fn main() {
 
         let mut piece_data = vec![0; meta.info.piece_length];
         for _ in 0..block_count {
-            let resp = connection.wait(7);
+            let resp = connection.wait(Connection::PIECE);
             println!("Received response of length {}", resp.len());
             let index = u32::from_be_bytes([resp[0], resp[1], resp[2], resp[3]]);
             if index != piece_index as u32 {
