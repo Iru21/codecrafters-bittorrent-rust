@@ -45,6 +45,7 @@ fn main() {
     } else if command == "handshake" {
         let meta = Torrent::from_file(&args[2]);
 
+
         let peer = if args.len() > 3 {
             args[3].clone()
         } else {
