@@ -75,12 +75,12 @@ impl Connection {
     }
 
     pub fn download_piece(&mut self, meta: Torrent, piece_index: u32, path: String) {
-        // println!("* Piece length: {}", meta.info.piece_length);
+        println!("* Piece length: {}", meta.info.piece_length);
 
         const CHUNK_SIZE: usize = 16 * 1024;
         let block_count = meta.info.piece_length / CHUNK_SIZE;
         for i in 0..block_count {
-            // println!("++ Requesting block {}", i);
+            println!("++ Requesting block {}", i);
             self.send_request(piece_index, (i * CHUNK_SIZE) as u32, CHUNK_SIZE as u32);
         }
 
@@ -88,7 +88,7 @@ impl Connection {
         let mut piece_data = vec![0; meta.info.piece_length];
         for _ in 0..block_count {
             let resp = self.wait(Connection::PIECE);
-            // println!("* Received response of length {}", resp.len());
+            println!("* Received response of length {}", resp.len());
             let index = u32::from_be_bytes([resp[0], resp[1], resp[2], resp[3]]);
             if index != piece_index {
                 println!("index mismatch, expected {}, got {}", &piece_index, index);
