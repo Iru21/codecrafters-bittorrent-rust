@@ -68,15 +68,10 @@ impl Connection {
 
     pub fn wait(&mut self, id: u8) -> Vec<u8> {
         let mut length_prefix = [0; 4];
-        match self.stream.read_exact(&mut length_prefix) {
-            Ok(_) => {}
-            Err(_) => {
-                return vec![];
-            }
-        }
+        self.stream.read_exact(&mut length_prefix).expect("Failed to read length prefix")
 
         let mut message_id = [0; 1];
-        self.stream.read_exact(&mut message_id).unwrap();
+        self.stream.read_exact(&mut message_id).expect("Failed to read message id");
 
         if message_id[0] != id {
             panic!("Expected message id {}, got {}", id, message_id[0]);
@@ -85,12 +80,7 @@ impl Connection {
         let resp_size = u32::from_be_bytes(length_prefix) - 1;
         return if resp_size > 0 {
             let mut payload = vec![0; resp_size as usize];
-            match self.stream.read_exact(&mut payload) {
-                Ok(_) => {}
-                Err(_) => {
-                    return vec![];
-                }
-            }
+            self.stream.read_exact(&mut payload).expect("Failed to read payload");
 
             payload
         } else {
