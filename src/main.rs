@@ -73,7 +73,7 @@ fn main() {
 
         let response = TrackerRequest::new(&meta.info)
             .fetch_peers(&meta.announce);
-        let peer = response.format_peers()[0)].clone();
+        let peer = response.format_peers()[0].clone();
 
         let mut connection = Connection::new(peer);
         connection.handshake(meta.info.hash().to_vec(), PEER_ID);
