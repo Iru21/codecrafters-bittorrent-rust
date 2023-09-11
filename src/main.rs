@@ -102,6 +102,7 @@ fn main() {
         let mut piece_data = vec![0; meta.info.piece_length];
         for _ in 0..block_count {
             let resp = connection.wait(7);
+            println!("Received response of length {}", resp.len());
             let index = u32::from_be_bytes([resp[0], resp[1], resp[2], resp[3]]);
             if index != piece_index as u32 {
                 println!("index mismatch, expected {}, got {}", &piece_index, index);
@@ -110,7 +111,7 @@ fn main() {
 
             let begin = u32::from_be_bytes([resp[4], resp[5], resp[6], resp[7]]) as usize;
 
-            println!("Received block {} of length {}", begin, resp.len() - 8);
+            println!("Received block {} of length {}", begin / CHUNK_SIZE, resp.len() - 8);
             piece_data.splice(begin..begin + CHUNK_SIZE, resp[8..].iter().cloned());
         }
 
