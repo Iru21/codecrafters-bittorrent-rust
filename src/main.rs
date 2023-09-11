@@ -97,7 +97,11 @@ fn main() {
         let mut piece_data = vec![0; meta.info.piece_length];
         for _ in 0..block_count {
             let resp = connection.wait(7);
-            let index = u32::from_be_bytes([resp[0], resp[1], resp[2], resp[3]]);
+            let index = if resp.len() > 8 {
+                u32::from_be_bytes([resp[0], resp[1], resp[2], resp[3]])
+            } else {
+                0
+            };
             if index != piece_index as u32 {
                 println!("index mismatch, expected {}, got {}", &piece_index, index);
                 continue;
