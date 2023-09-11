@@ -75,12 +75,12 @@ impl Connection {
     }
 
     pub fn download_piece(&mut self, meta: Torrent, piece_index: u32, path: String) {
-        println!("* Piece length: {}", meta.info.piece_length);
+        // println!("* Piece length: {}", meta.info.piece_length);
 
         const CHUNK_SIZE: usize = 16 * 1024;
         let block_count = meta.info.piece_length / CHUNK_SIZE;
         for i in 0..block_count {
-            println!("++ Requesting block {}", i);
+            // println!("++ Requesting block {}", i);
             self.send_request(piece_index, (i * CHUNK_SIZE) as u32, CHUNK_SIZE as u32);
         }
 
@@ -88,7 +88,7 @@ impl Connection {
         let mut piece_data = vec![0; meta.info.piece_length];
         for _ in 0..block_count {
             let resp = self.wait(Connection::PIECE);
-            println!("* Received response of length {}", resp.len());
+            // println!("* Received response of length {}", resp.len());
             let index = u32::from_be_bytes([resp[0], resp[1], resp[2], resp[3]]);
             if index != piece_index {
                 println!("index mismatch, expected {}, got {}", &piece_index, index);
@@ -97,10 +97,10 @@ impl Connection {
 
             let begin = u32::from_be_bytes([resp[4], resp[5], resp[6], resp[7]]) as usize;
             piece_data.splice(begin..begin + CHUNK_SIZE, resp[8..].iter().cloned());
-            println!("-- Received block {} of length {}", begin / CHUNK_SIZE, resp.len() - 8);
+            // println!("-- Received block {} of length {}", begin / CHUNK_SIZE, resp.len() - 8);
         }
 
-        println!("% All pieces received, verifying hash");
+        // println!("% All pieces received, verifying hash");
         let mut hasher = Sha1::new();
         hasher.update(&piece_data.as_slice());
         let fetched_piece_hash = hasher.finalize().iter().map(|b| {
@@ -108,8 +108,8 @@ impl Connection {
         }).collect::<Vec<String>>().join("");
 
         let piece_hash = meta.info.pieces()[piece_index as usize].clone();
-        println!("% Expected piece hash: {}", &piece_hash);
-        println!("% Received piece hash: {}", &fetched_piece_hash);
+        // println!("% Expected piece hash: {}", &piece_hash);
+        // println!("% Received piece hash: {}", &fetched_piece_hash);
         if fetched_piece_hash == piece_hash {
             let mut file = std::fs::OpenOptions::new()
                 .create(true)
@@ -126,21 +126,22 @@ impl Connection {
     }
 
     pub fn wait(&mut self, id: u8) -> Vec<u8> {
-        println!("* Waiting for message {}", id);
+        // println!("* Waiting for message {}", id);
 
         let mut length_prefix = [0; 4];
         self.stream.read_exact(&mut length_prefix).expect("Failed to read length prefix");
 
-        let resp_size = u32::from_be_bytes(length_prefix);
-        println!("* Expecting {} bytes of payload", resp_size);
+        let mut message_id = [0; 1];
+        self.stream.read_exact(&mut message_id).expect("Failed to read message id");
+
+        if message_id[0] != id {
+            panic!("* Expected message id {}, got {}", id, message_id[0]);
+        }
+
+        let resp_size = u32::from_be_bytes(length_prefix) - 1;
+        // println!("* Expecting {} bytes of payload", resp_size);
         let mut payload = vec![0; resp_size as usize];
         self.stream.read_exact(&mut payload).expect("Failed to read payload");
-
-        let message_id = payload.remove(0);
-
-        if message_id != id {
-            panic!("* Expected message id {}, got {}", id, message_id);
-        }
 
         payload
     }
