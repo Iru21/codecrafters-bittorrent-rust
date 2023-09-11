@@ -85,7 +85,6 @@ fn main() {
 
         connection.wait(Connection::BITFIELD);
 
-
         connection.send_interested();
         connection.wait(Connection::UNCHOKE);
 
@@ -115,9 +114,8 @@ fn main() {
             }
 
             let begin = u32::from_be_bytes([resp[4], resp[5], resp[6], resp[7]]) as usize;
-
-            println!("Received block {} of length {}", begin / CHUNK_SIZE, resp.len() - 8);
             piece_data.splice(begin..begin + CHUNK_SIZE, resp[8..].iter().cloned());
+            println!("Received block {} of length {}", begin / CHUNK_SIZE, resp.len() - 8);
         }
 
         println!("All pieces received, verifying hash");
