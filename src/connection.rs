@@ -67,6 +67,13 @@ impl Connection {
     }
 
     pub fn wait(&mut self, id: u8) -> Vec<u8> {
+        if id == 5 {
+            let mut handshake_response = [0; 68];
+            self.stream.read_exact(&mut handshake_response).unwrap();
+
+            return handshake_response.to_vec();
+        }
+
         let mut length_prefix = [0; 4];
         self.stream.read_exact(&mut length_prefix).expect("Failed to read length prefix");
 
