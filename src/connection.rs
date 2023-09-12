@@ -105,7 +105,7 @@ impl Connection {
 
 
         let mut piece_data = vec![0; piece_length];
-        for i in 0..block_count {
+        for _ in 0..block_count {
             let resp = self.wait(Connection::PIECE);
             let index = u32::from_be_bytes([resp[0], resp[1], resp[2], resp[3]]);
             if index != piece_index {
@@ -117,7 +117,6 @@ impl Connection {
             piece_data.splice(begin..begin + resp[8..].len(), resp[8..].iter().cloned());
         }
 
-        println!("% All pieces received, verifying hash");
         let mut hasher = Sha1::new();
         hasher.update(&piece_data.as_slice());
         let fetched_piece_hash = hasher.finalize().iter().map(|b| {
