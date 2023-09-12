@@ -90,12 +90,11 @@ impl Connection {
         } else {
             meta.info.piece_length
         };
-        println!("* Piece length: {}", piece_length);
+        println!("* Downloading piece {} of length: {}", piece_index, piece_length);
 
         const CHUNK_SIZE: usize = 16 * 1024;
         let block_count = piece_length / CHUNK_SIZE + (piece_length % CHUNK_SIZE != 0) as usize;
         for i in 0..block_count {
-            println!("++ Requesting block {} of piece {}", i, piece_index);
             let length = if i == block_count - 1 {
                 piece_length - (i * CHUNK_SIZE)
             } else {
