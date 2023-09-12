@@ -108,10 +108,10 @@ impl Connection {
 
             let begin = u32::from_be_bytes([resp[4], resp[5], resp[6], resp[7]]) as usize;
             piece_data.splice(begin..begin + CHUNK_SIZE, resp[8..].iter().cloned());
-            // println!("-- Received block {} of length {}", begin / CHUNK_SIZE, resp.len() - 8);
+            println!("-- Received block {} of length {}", begin / CHUNK_SIZE, resp.len() - 8);
         }
 
-        // println!("% All pieces received, verifying hash");
+        println!("% All pieces received, verifying hash");
         let mut hasher = Sha1::new();
         hasher.update(&piece_data.as_slice());
         let fetched_piece_hash = hasher.finalize().iter().map(|b| {
@@ -150,7 +150,7 @@ impl Connection {
         }
 
         let resp_size = u32::from_be_bytes(length_prefix) - 1;
-        // println!("* Expecting {} bytes of payload", resp_size);
+        println!("* Expecting {} bytes of payload", resp_size);
         let mut payload = vec![0; resp_size as usize];
         self.stream.read_exact(&mut payload).expect("Failed to read payload");
 
