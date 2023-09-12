@@ -75,7 +75,12 @@ impl Connection {
     }
 
     pub fn download_piece(&mut self, meta: Torrent, piece_index: u32, path: String) {
-        let piece_length = meta.info.piece_length;
+        let is_last_piece = piece_index as usize == meta.info.pieces().len() - 1;
+        let piece_length = if is_last_piece {
+            meta.info.length - (piece_index as usize * meta.info.piece_length)
+        } else {
+            meta.info.piece_length
+        };
         println!("* Piece length: {}", piece_length);
 
         const CHUNK_SIZE: usize = 16 * 1024;
