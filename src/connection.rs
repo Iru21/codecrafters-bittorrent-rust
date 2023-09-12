@@ -28,6 +28,15 @@ impl Connection {
         }
     }
 
+    pub fn prepare(&mut self, info_hash: Vec<u8>, peer_id: &str) {
+        self.handshake(info_hash, peer_id);
+
+        self.wait(Connection::BITFIELD);
+
+        self.send_interested();
+        self.wait(Connection::UNCHOKE);
+    }
+
     pub fn handshake(&mut self, info_hash: Vec<u8>, peer_id: &str) -> HandshakeResponse {
         let mut handshake = Vec::<u8>::new();
 
@@ -74,7 +83,7 @@ impl Connection {
         self.stream.write_all(&message).unwrap();
     }
 
-    pub fn download_piece(&mut self, meta: Torrent, piece_index: u32, path: String) {
+    pub fn download_piece(&mut self, meta: Torrent, piece_index: u32) -> Vec<u8> {
         let is_last_piece = piece_index as usize == meta.info.pieces().len() - 1;
         let piece_length = if is_last_piece {
             meta.info.length - (piece_index as usize * meta.info.piece_length)
@@ -86,7 +95,7 @@ impl Connection {
         const CHUNK_SIZE: usize = 16 * 1024;
         let block_count = piece_length / CHUNK_SIZE + (piece_length % CHUNK_SIZE != 0) as usize;
         for i in 0..block_count {
-            println!("++ Requesting block {}", i);
+            println!("++ Requesting block {} of piece {}", i, piece_index);
             let length = if i == block_count - 1 {
                 piece_length - (i * CHUNK_SIZE)
             } else {
@@ -99,7 +108,7 @@ impl Connection {
         let mut piece_data = vec![0; piece_length];
         for i in 0..block_count {
             let resp = self.wait(Connection::PIECE);
-            println!("* Received response of length {} for block {}", resp.len(), i);
+            println!("* Received response of length {} for block {} of piece {}", resp.len(), i, piece_index);
             let index = u32::from_be_bytes([resp[0], resp[1], resp[2], resp[3]]);
             if index != piece_index {
                 println!("index mismatch, expected {}, got {}", &piece_index, index);
@@ -119,17 +128,9 @@ impl Connection {
 
         let piece_hash = meta.info.pieces()[piece_index as usize].clone();
         if fetched_piece_hash == piece_hash {
-            let mut file = std::fs::OpenOptions::new()
-                .create(true)
-                .write(true)
-                .open(&path)
-                .unwrap();
-
-            file.write_all(&piece_data).unwrap();
-
-            println!("Piece {} downloaded to {}.", &piece_index, &path);
+            return piece_data;
         } else {
-            println!("% piece hash mismatch, expected {}({}), got {}({})", piece_hash, piece_hash.len(), fetched_piece_hash, fetched_piece_hash.len());
+            panic!("% piece hash mismatch, expected {}({}), got {}({})", piece_hash, piece_hash.len(), fetched_piece_hash, fetched_piece_hash.len());
         }
     }
 

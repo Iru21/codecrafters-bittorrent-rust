@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sha1::digest::Output;
 use sha1::{Sha1, Digest};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct TorrentInfo {
     #[allow(dead_code)]
     pub name: String,
@@ -46,7 +46,7 @@ impl TorrentInfo {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Torrent {
     pub announce: String,
     pub info: TorrentInfo
