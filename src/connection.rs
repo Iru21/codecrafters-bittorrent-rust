@@ -107,7 +107,6 @@ impl Connection {
         let mut piece_data = vec![0; piece_length];
         for i in 0..block_count {
             let resp = self.wait(Connection::PIECE);
-            println!("* Received response of length {} for block {} of piece {}", resp.len(), i, piece_index);
             let index = u32::from_be_bytes([resp[0], resp[1], resp[2], resp[3]]);
             if index != piece_index {
                 println!("index mismatch, expected {}, got {}", &piece_index, index);
