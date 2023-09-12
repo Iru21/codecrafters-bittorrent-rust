@@ -75,14 +75,15 @@ impl Connection {
     }
 
     pub fn download_piece(&mut self, meta: Torrent, piece_index: u32, path: String) {
-        println!("* Piece length: {}", meta.info.piece_length);
+        let piece_length = meta.info.piece_length;
+        println!("* Piece length: {}", piece_length);
 
         const CHUNK_SIZE: usize = 16 * 1024;
-        let block_count = meta.info.piece_length / CHUNK_SIZE;
+        let block_count = piece_length / CHUNK_SIZE;
         for i in 0..block_count {
             println!("++ Requesting block {}", i);
             let length = if i == block_count - 1 {
-                meta.info.piece_length - (i * CHUNK_SIZE)
+                piece_length - (i * CHUNK_SIZE)
             } else {
                 CHUNK_SIZE
             };
@@ -90,7 +91,7 @@ impl Connection {
         }
 
 
-        let mut piece_data = vec![0; meta.info.piece_length];
+        let mut piece_data = vec![0; piece_length];
         for _ in 0..block_count {
             let resp = self.wait(Connection::PIECE);
             println!("* Received response of length {}", resp.len());
