@@ -81,7 +81,12 @@ impl Connection {
         let block_count = meta.info.piece_length / CHUNK_SIZE;
         for i in 0..block_count {
             println!("++ Requesting block {}", i);
-            self.send_request(piece_index, (i * CHUNK_SIZE) as u32, CHUNK_SIZE as u32);
+            let length = if i == block_count - 1 {
+                meta.info.piece_length - (i * CHUNK_SIZE)
+            } else {
+                CHUNK_SIZE
+            };
+            self.send_request(piece_index, (i * CHUNK_SIZE) as u32, length as u32);
         }
 
 
