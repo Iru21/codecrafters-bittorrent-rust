@@ -84,7 +84,7 @@ impl Connection {
         println!("* Piece length: {}", piece_length);
 
         const CHUNK_SIZE: usize = 16 * 1024;
-        let block_count = piece_length / CHUNK_SIZE;
+        let block_count = piece_length / CHUNK_SIZE + (piece_length % CHUNK_SIZE != 0) as usize;
         for i in 0..block_count {
             println!("++ Requesting block {}", i);
             let length = if i == block_count - 1 {
