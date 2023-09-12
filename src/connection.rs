@@ -107,7 +107,7 @@ impl Connection {
             }
 
             let begin = u32::from_be_bytes([resp[4], resp[5], resp[6], resp[7]]) as usize;
-            piece_data.splice(begin..begin + piece_length, resp[8..].iter().cloned());
+            piece_data.splice(begin..begin + resp[8..].len(), resp[8..].iter().cloned());
             println!("-- Received block {} of length {}", begin / CHUNK_SIZE, resp.len() - 8);
         }
 
